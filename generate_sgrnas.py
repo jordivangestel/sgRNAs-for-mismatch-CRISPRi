@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import argparse
 import logging
 import os
@@ -25,6 +26,20 @@ def revcomp(x):
 
 
 def write_params_to_log(args):
+    def join_or_drop(maybe_list):
+        if maybe_list is None:
+            return maybe_list
+        elif type(maybe_list) == list:
+            return ",".join(maybe_list)
+        else:
+            raise TypeError('join_or_drop() called on something other than None or list')
+    def len_or_drop(maybe_list):
+        if maybe_list is None:
+            return 0
+        elif type(maybe_list) == list:
+            return len(maybe_list)
+        else:
+            raise TypeError('len_or_drop() called on something other than None or list')
     logging.info(
         f"""
     ************
@@ -39,8 +54,8 @@ def write_params_to_log(args):
     ******************
     PARAMETER SETTINGS
     ******************
-    locus_tag(s): {",".join(args.locus_tag)} ({len(args.locus_tag)})
-    steps: {",".join(args.step)}
+    locus_tag(s): {join_or_drop(args.locus_tag)} ({len_or_drop(args.locus_tag)})
+    steps: {join_or_drop(args.step)}
     downstream (nt): {args.downstream}
     off-target seed (nt): {args.off_target_seed}
     off-target ignore (#): {args.off_target_ignore}
@@ -48,9 +63,9 @@ def write_params_to_log(args):
     ***************
     FILTER CRITERIA
     ***************
-    PAM remove: {",".join(args.pam_remove)} ({len(args.pam_remove)})
-    sgRNA remove: {",".join(args.sgrna_remove)} ({len(args.sgrna_remove)})
-    downstream remove: {",".join(args.downstream_remove)} ({len(args.downstream_remove)})
+    PAM remove: {join_or_drop(args.pam_remove)} ({len_or_drop(args.pam_remove)})
+    sgRNA remove: {join_or_drop(args.sgrna_remove)} ({len_or_drop(args.sgrna_remove)})
+    downstream remove: {join_or_drop(args.downstream_remove)} ({len_or_drop(args.downstream_remove)})
     GC lower(%): {args.gc_lower}
     GC upper(%): {args.gc_upper}
     offset upper (nt): {args.offset_upper}
@@ -280,75 +295,43 @@ def construct_perfect_sgrnas(args):
     logging.info(f"{hitframe.shape}")
 
 
-def str_compare(s1, s2):
-    match = [False] * len(s2)
-    for s_1 in range(len(s1)):
-        i_nt = [m.start(0) for m in re.finditer("N", s1[s_1])]
-        if len(i_nt) == len(s1[s_1]):
-            # TODO(jsh): fix this case.
-            continue  # don't compare against a string of 'N's or we'll drop everything
-        short_remove = "".join(
-            [char for idx, char in enumerate(s1[s_1]) if idx not in i_nt]
-        )
-        for s_2 in range(len(s2)):
-            short_sequence = "".join(
-                [char for idx, char in enumerate(s2[s_2]) if idx not in i_nt]
-            )
-            if short_remove == short_sequence:
-                match[s_2] = True
-    return [i for (i, x) in enumerate(match) if x == True]
-
-
 def filter_guides(args):
-    # Filter
+    _FLATTEN = str.maketrans("Nn", "..")
+
+    def filter_patterns(frame, column, patterns):
+        """Remove all rows from frame where frame[column] matches any provided patterns"""
+        # bail if there are no patterns
+        if patterns is None or len(patterns) == 0:
+            return frame
+        # First, replace all 'Nn's with '.'s, then make a big OR pattern
+        regex = "|".join([p.translate(_FLATTEN) for p in patterns])
+        return frame.loc[~frame[column].str.match(regex)]
+
     hitframe = pd.read_csv(args.file_find)
-    hitframe = hitframe.drop(
-        str_compare(args.pam_remove, hitframe["pam"].to_list()), axis=0
-    ).reset_index(drop=True)
-    hitframe = hitframe.drop(
-        str_compare(args.sgrna_remove, hitframe["sgrna"].to_list()), axis=0
-    ).reset_index(drop=True)
-    hitframe = hitframe.drop(
-        str_compare(args.downstream_remove, hitframe["downstream"].to_list()),
-        axis=0,
-    ).reset_index(drop=True)
-    hitframe = hitframe.drop(
-        [i for i, x in enumerate(hitframe["gc"].to_list()) if x > args.gc_upper],
-        axis=0,
-    ).reset_index(drop=True)
-    hitframe = hitframe.drop(
-        [i for i, x in enumerate(hitframe["gc"].to_list()) if x < args.gc_lower],
-        axis=0,
-    ).reset_index(drop=True)
-    hitframe = hitframe.drop(
-        [
-            i
-            for i, x in enumerate(hitframe["offset"].to_list())
-            if x > args.offset_upper
-        ],
-        axis=0,
-    ).reset_index(drop=True)
-    hitframe = hitframe.drop(
-        [
-            i
-            for i, x in enumerate(hitframe["off_target_n"].to_list())
-            if x > args.off_target_upper
-        ],
-        axis=0,
-    ).reset_index(drop=True)
+    hitframe = filter_patterns(hitframe, "pam", args.pam_remove)
+    hitframe = filter_patterns(hitframe, "sgrna", args.sgrna_remove)
+    hitframe = filter_patterns(hitframe, "downstream", args.downstream_remove)
+    hitframe = hitframe.loc[hitframe.gc >= args.gc_lower]
+    hitframe = hitframe.loc[hitframe.gc <= args.gc_upper]
+    hitframe = hitframe.loc[hitframe.offset <= args.offset_upper]
+    hitframe = hitframe.loc[hitframe.off_target_n <= args.off_target_upper]
     logging.info("...")
     logging.info(f"{hitframe.head(10)}")
     logging.info(f"{hitframe.shape}")
     hitframe.to_csv(args.file_filter, index=False)
 
 
+@profile
 def construct_mismatch_guides(args):
     # Create mismatch and predictions
     hitframe = pd.read_csv(args.file_filter)
     mm = []
     lookup = pd.read_csv(args.model_param)
-    # TODO(jsh): we're computing a linear model ... by hand?!
     for i in range(len(hitframe["n"].to_list())):
+        # DEBUG
+        if i > 30:
+            continue
+        # DEBUG
         logging.info(
             "Progress generating mismatches (n=%i): %i"
             % (len(hitframe["n"].to_list()), i + 1),
@@ -487,7 +470,7 @@ def parse_args():
         type=str,
         help="list of PAM sequences to filter",
         required=False,
-        default="NNN",
+        default=None,
     )
     parser.add_argument(
         "--downstream_remove",
@@ -501,7 +484,7 @@ def parse_args():
         type=str,
         help="list of specific sgRNA targets to filter",
         required=False,
-        default=("N" * 20),
+        default=None,
     )
     parser.add_argument(
         "--gc_upper",
@@ -532,39 +515,40 @@ def parse_args():
         default=10,
     )
     args = parser.parse_args()
-    args.sgrna_remove = args.sgrna_remove.split(",")
-    args.pam_remove = args.pam_remove.split(",")
-    if args.downstream_remove is None:
-        args.downstream_remove = "N" * args.downstream
-    args.downstream_remove = args.downstream_remove.split(",")
+    if args.sgrna_remove is not None:
+        args.sgrna_remove = args.sgrna_remove.split(",")
+        for i in range(len(args.sgrna_remove)):
+            if len(args.sgrna_remove[i]) != 20:
+                message = (
+                    f"args.sgrna_remove included {args.sgrna_remove[i]} "
+                    f"which is not 20 nt long."
+                )
+                raise ValueError(message)
+    if args.pam_remove is not None:
+        args.pam_remove = args.pam_remove.split(",")
+        for i in range(len(args.pam_remove)):
+            problem = None
+            if len(args.pam_remove[i]) != 3:
+                problem = "was not 3 nucleotides long"
+            elif args.pam_remove[i][1] == "G" or args.pam_remove[i][2] == "G":
+                problem = "contained a 'G' in 2nd or 3rd position"
+            if problem is not None:
+                message = (
+                    f"args.pam_remove value {i} was {args.pam_remove[i]} "
+                    f"which {problem}."
+                )
+                raise ValueError(message)
+    if args.downstream_remove is not None:
+        args.downstream_remove = args.downstream_remove.split(",")
+        for i in range(len(args.downstream_remove)):
+            if len(args.downstream_remove[i]) != args.downstream:
+                message = (
+                    f"args.downstream_remove included {args.downstream_remove[i]} "
+                    f"which must be args.downstream ({args.downstream}) bases long."
+                )
+                raise ValueError(message)
     args.locus_tag = args.locus_tag.split(",")
     args.step = args.step.split(",")
-    for i in range(len(args.pam_remove)):
-        problem = None
-        if len(args.pam_remove[i]) != 3:
-            problem = "was not 3 nucleotides long"
-        elif args.pam_remove[i][1] == "G" or args.pam_remove[i][2] == "G":
-            problem = "contained a 'G' in 2nd or 3rd position"
-        if problem is not None:
-            message = (
-                f"args.pam_remove value {i} was {args.pam_remove[i]} "
-                f"which {problem}."
-            )
-            raise ValueError(message)
-    for i in range(len(args.sgrna_remove)):
-        if len(args.sgrna_remove[i]) != 20:
-            message = (
-                f"args.sgrna_remove included {args.sgrna_remove[i]} "
-                f"which is not 20 nt long."
-            )
-            raise ValueError(message)
-    for i in range(len(args.downstream_remove)):
-        if len(args.downstream_remove[i]) != args.downstream:
-            message = (
-                f"args.downstream_remove included {args.downstream_remove[i]} "
-                f"which must be args.downstream ({args.downstream}) bases long."
-            )
-            raise ValueError(message)
     return args
 
 
