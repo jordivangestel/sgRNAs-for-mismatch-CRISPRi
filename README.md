@@ -1,8 +1,8 @@
-#Project: Computational pipeline for designing guide RNAs for mismatch-CRISPRi
+# Project: Computational pipeline for designing guide RNAs for mismatch-CRISPRi
 Authors: Jordi van Gestel, John S. Hawkins, Horia Todor, Carol A. Gross
 Date: 1 March 2021
 
-#Code description:
+# Code description:
 generate_sgrna.py generates a list of single-guide RNAs (sgRNAs) for CRISPR interference. For each sgRNA, an additional list of single-nucleotide mismatch sgRNAs is provided, with predicted
 knockdown efficacy, which can be used to titrate transcriptional interference. generate_sgrna.py requires installation of pandas and biopython modules. As input, the python script requires a GenBank file 
 with genomic features as well as a full genome sequence (.gb,.gbk,.gbff). As output, the computational pipeline generates three CSV-files:
@@ -10,11 +10,11 @@ with genomic features as well as a full genome sequence (.gb,.gbk,.gbff). As out
 (2) sgRNA_filtered.csv: list of filtered sgRNAs, based on a few filter criteria set by the user (in order to remove potentially weak sgRNAs and avoid off-target hits)
 (3) sgRNA_mismatched.csv: list of all single-nucleotide mismatch sgRNAs and their predicted knockdown efficacy relative to their full sgRNAs
 
-#Resources:
+# Resources:
 The python script is provided as part of a STAR Protocols publication, which provides a detail overview of the computational pipeline: van Gestel et al., 2021 STAR Protocols
 The STAR Protocols publication follows a previous publication in Cell Systems: Hawkins et al., 2020 Cell Systems
 
-#Sample codes:
+# Sample codes:
 Get overview of all parameter settings
 python generate_sgRNAs.py -h
 Generate sgRNAs for gene of interest (--locu_tag BSU_00010), using GenBank file GCF_000009045.1_ASM904v1_genomic.gbff as input
@@ -22,7 +22,7 @@ python generate_sgrnas.py --genbank GCF_000009045.1_ASM904v1_genomic.gbff --locu
 Generate sgRNAs for all genes in genome
 python generate_sgrnas.py --genbank GCF_000009045.1_ASM904v1_genomic.gbff --locus_tag all
 
-#Parameters:
+# Parameters:
 --genbank, Genbank file name (default: NA)
 --locus_tag, Locus tag or list of locus tags for which to generate sgRNAs. Lists should be separated by commas, not space (default: NA)
 --model_param, [Optional] Name of csv file with model parameters (default: model_param.csv)
