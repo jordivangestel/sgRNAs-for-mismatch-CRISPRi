@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# python Generate_sgRNAs.py -h
+# python generate_sgRNAs.py -h
 # python generate_sgrnas.py --genbank GCF_000009045.1_ASM904v1_genomic.gbff --locus_tag BSU_00010
 # python generate_sgrnas.py --genbank GCF_000009045.1_ASM904v1_genomic.gbff --locus_tag all
 
@@ -170,8 +170,9 @@ def construct_perfect_sgrnas(args):
                                 down_seq = str(rec.seq)[
                                     rev_genome:(rev_genome + args.downstream)
                                 ]
+                            sgRNA_seed = sgRNA[(20 - args.off_target_seed):20]
                             off_target_n = (
-                                offtarget[sgRNA[(20 - args.off_target_seed):20]] - 1
+                                offtarget[sgRNA_seed] - 1
                             )
                             hits.append(
                                 (
@@ -187,6 +188,7 @@ def construct_perfect_sgrnas(args):
                                     pam,
                                     down_seq,
                                     sgRNA + pam + down_seq,
+                                    sgRNA_seed,
                                     off_target_n,
                                 )
                             )
@@ -206,6 +208,7 @@ def construct_perfect_sgrnas(args):
             "pam",
             "downstream",
             "sequence",
+            "seed",
             "off_target_n",
         ],
     )
