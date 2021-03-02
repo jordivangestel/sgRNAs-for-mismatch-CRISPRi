@@ -14,7 +14,7 @@ The STAR Protocols publication follows a previous publication in Cell Systems: H
 
 # Sample codes:
 Get overview of all parameter settings<br />
-<font color="red"> python generate_sgRNAs.py -h </font> <br />
+-![#1589F0](python generate_sgRNAs.py -h)`#1589F0`<br />
 Generate sgRNAs for gene of interest (--locu_tag BSU_00010), using GenBank file GCF_000009045.1_ASM904v1_genomic.gbff as input<br />
 python generate_sgrnas.py --genbank GCF_000009045.1_ASM904v1_genomic.gbff --locus_tag BSU_00010<br />
 Generate sgRNAs for all genes in genome<br />
