@@ -16,10 +16,10 @@ The STAR Protocols publication follows a previous publication in Cell Systems: H
 Get overview of all parameter settings<br />
 - python generate_sgRNAs.py -h <br />
 
-Generate sgRNAs for gene of interest (--locu_tag BSU_00010), using GenBank file GCF_000009045.1_ASM904v1_genomic.gbff as input<br />
+Generate sgRNAs and single-nucleotide mismatch sgRNAs for gene of interest (--locus_tag BSU_00010), using GenBank file GCF_000009045.1_ASM904v1_genomic.gbff as input<br />
 - python generate_sgrnas.py --genbank GCF_000009045.1_ASM904v1_genomic.gbff --locus_tag BSU_00010<br />
 
-Generate sgRNAs for all genes in genome<br />
+Generate sgRNAs and single-nucleotide mismatch sgRNAs for all genes in genome<br />
 - python generate_sgrnas.py --genbank GCF_000009045.1_ASM904v1_genomic.gbff --locus_tag all<br />
 
 # Parameters:
