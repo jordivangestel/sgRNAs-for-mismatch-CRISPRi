@@ -4,9 +4,9 @@ Date: 1 March 2021
 
 # Code description:
 generate_sgrna.py generates a list of single-guide RNAs (sgRNAs) for CRISPR interference. For each sgRNA, an additional list of single-nucleotide mismatch sgRNAs is provided, with predicted knockdown efficacy, which can be used to titrate transcriptional interference. generate_sgrna.py requires installation of pandas and biopython modules. As input, the python script requires a GenBank file with genomic features as well as a full genome sequence (.gb,.gbk,.gbff). As output, the computational pipeline generates three CSV-files:<br />
-(1) sgRNA.csv: full list of all potential sgRNAs that could be used for a gene of interest<br />
-(2) sgRNA_filtered.csv: list of filtered sgRNAs, based on a few filter criteria set by the user (in order to remove potentially weak sgRNAs and avoid off-target hits)<br />
-(3) sgRNA_mismatched.csv: list of all single-nucleotide mismatch sgRNAs and their predicted knockdown efficacy relative to their full sgRNAs<br />
+- (1) sgRNA.csv: full list of all potential sgRNAs that could be used for a gene of interest<br />
+- (2) sgRNA_filtered.csv: list of filtered sgRNAs, based on a few filter criteria set by the user (in order to remove potentially weak sgRNAs and avoid off-target hits)<br />
+- (3) sgRNA_mismatched.csv: list of all single-nucleotide mismatch sgRNAs and their predicted knockdown efficacy relative to their full sgRNAs<br />
 
 # Resources:
 The python script is provided as part of a STAR Protocols publication, which provides a detail overview of the computational pipeline: van Gestel et al., 2021 STAR Protocols<br />
@@ -24,7 +24,9 @@ Generate sgRNAs and single-nucleotide mismatch sgRNAs for all genes in genome<br
 
 # Parameters:
 --genbank, Genbank file name (default: NA)<br />
+
 --locus_tag, Locus tag or list of locus tags for which to generate sgRNAs. Lists should be separated by commas, not space (default: NA)<br />
+
 --model_param, [Optional] Name of csv file with model parameters (default: model_param.csv)<br />
 --step, [Optional] Steps to conduct. When conducting multiple steps list them separated by a comma (default: find,filter,mismatch)<br />
 --downstream, [Optional] Number of nucleotides downstream of the PAM sequence to be included in the analysis (default: 15)<br />
